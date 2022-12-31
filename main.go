@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -13,6 +14,7 @@ import (
 var ctx = context.Background()
 
 type Student struct {
+	ID string `bson:"_id"`
 	Name  string `bson:"name"`
 	Grade int    `bson:"grade"`
 }
@@ -60,6 +62,7 @@ func find(db *mongo.Database) {
 	}
 	if len(result) > 0 {
 		for i := 0; i < len(result); i++ {
+			fmt.Print("Id : ", result[i].ID + " | ")
 			fmt.Print("Name :", result[i].Name + "  |  ")
 			fmt.Println("Grade :", result[i].Grade)
 		}
@@ -79,6 +82,22 @@ func update(db *mongo.Database, name string, data Student) {
 	fmt.Println("Update success")
 }
 
+func delete(db *mongo.Database, id string) {
+	var cnvId, err = primitive.ObjectIDFromHex(id)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	var selector = bson.M{"_id": cnvId}
+
+	_, err = db.Collection("student").DeleteOne(ctx, selector)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	fmt.Println("Delete success!")
+
+}
+
 func main() {
 	conn, err := connection()
 	if err != nil {
@@ -89,6 +108,7 @@ func main() {
 	fmt.Println("1. Insert data")
 	fmt.Println("2. Get data")
 	fmt.Println("3. Update data")
+	fmt.Println("4. Delete data")
 	fmt.Print("Select number : ")
 	fmt.Scanln(&number)
 
@@ -119,5 +139,10 @@ func main() {
 
 		data := Student{Name: name, Grade: grade}
 		update(conn, newData, data)
+	case 4:
+		var id string
+		fmt.Print("Masukkan id data : ")
+		fmt.Scanln(&id)
+		delete(conn, id)
 	}
 }
